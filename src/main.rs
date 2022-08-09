@@ -1,6 +1,9 @@
 mod commands;
 use commands::*;
 
+#[macro_use]
+extern crate log;
+
 use poise::serenity_prelude as serenity;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -11,6 +14,8 @@ pub struct Data {}
 
 #[tokio::main]
 async fn main() {
+    env_logger::init();
+
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![register::register(), ping::ping(), autocomplete::greet()],
@@ -21,6 +26,19 @@ async fn main() {
                 )),
                 additional_prefixes: vec![poise::Prefix::Literal("hey bot,")],
                 ..Default::default()
+            },
+            on_error: |err| {
+                Box::pin(async move {
+                    match err {
+                        poise::FrameworkError::Command { ctx, .. } => {
+                            error!(
+                                "In on_error: {:?}",
+                                ctx.invocation_data::<&str>().await.as_deref()
+                            );
+                        }
+                        err => poise::builtins::on_error(err).await.unwrap(),
+                    }
+                })
             },
             ..Default::default()
         })
