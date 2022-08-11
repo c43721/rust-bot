@@ -14,7 +14,7 @@ async fn get_defaults(ctx: Context<'_>) -> Vec<Definition> {
     let response = ctx
         .data()
         .http_client
-        .get(&*RANDOM_URL)
+        .get(RANDOM_URL)
         .send()
         .await
         .unwrap()
@@ -31,7 +31,7 @@ async fn get_definitions_for_term(ctx: Context<'_>, term: String) -> Vec<Definit
     let response = ctx
         .data()
         .http_client
-        .get(&url)
+        .get(url)
         .send()
         .await
         .unwrap()
