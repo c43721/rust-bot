@@ -1,6 +1,8 @@
 mod commands;
 use commands::*;
 
+mod model;
+
 #[macro_use]
 extern crate log;
 
@@ -10,7 +12,9 @@ type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
 // User data, which is stored and accessible in all command invocations
-pub struct Data {}
+pub struct Data {
+    http_client: reqwest::Client,
+}
 
 #[tokio::main]
 async fn main() {
@@ -18,7 +22,11 @@ async fn main() {
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![register::register(), ping::ping(), autocomplete::greet()],
+            commands: vec![
+                register::register(),
+                ping::ping(),
+                urbandict::urban_dictionary(),
+            ],
             prefix_options: poise::PrefixFrameworkOptions {
                 prefix: Some("!".into()),
                 edit_tracker: Some(poise::EditTracker::for_timespan(
@@ -46,7 +54,13 @@ async fn main() {
         .intents(
             serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT,
         )
-        .user_data_setup(move |_ctx, _ready, _framework| Box::pin(async move { Ok(Data {}) }));
+        .user_data_setup(move |_ctx, _ready, _framework| {
+            Box::pin(async move {
+                Ok(Data {
+                    http_client: reqwest::Client::new(),
+                })
+            })
+        });
 
     framework.run().await.unwrap();
 }
