@@ -3,8 +3,7 @@ use commands::*;
 
 mod model;
 
-#[macro_use]
-extern crate log;
+use tracing::{error, instrument};
 
 use poise::serenity_prelude as serenity;
 
@@ -16,9 +15,10 @@ pub struct Data {
     http_client: reqwest::Client,
 }
 
+#[instrument]
 #[tokio::main]
 async fn main() {
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -44,7 +44,11 @@ async fn main() {
                                 ctx.invocation_data::<&str>().await.as_deref()
                             );
                         }
-                        err => poise::builtins::on_error(err).await.unwrap(),
+                        err => {
+                            if let Err(e) = poise::builtins::on_error(err).await {
+                                error!("Fatal error while sending error message: {}", e);
+                            }
+                        }
                     }
                 })
             },
